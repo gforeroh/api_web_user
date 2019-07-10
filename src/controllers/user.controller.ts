@@ -16,7 +16,9 @@ import {
   put,
   del,
   requestBody,
+  HttpErrors
 } from '@loopback/rest';
+import {validateCredentials} from '../services/validator';
 import {User} from '../models';
 import {UserRepository} from '../repositories';
 
@@ -41,6 +43,7 @@ import {
   UserServiceBindings,
 } from '../keys';
 import * as _ from 'lodash';
+import { log } from 'util';
 
 export class UserController {
   constructor(
@@ -101,7 +104,25 @@ export class UserController {
     },
   })
   async create(@requestBody() user: User): Promise<User> {
-    return await this.userRepository.create(user);
+    // ensure a valid email value and password value
+    // validateCredentials(_.pick(user, ['email', 'password']));
+
+    // encrypt the password
+    user.password = await this.passwordHasher.hashPassword(user.password || '{}'); // user.password
+    try {
+      // create the new user
+      const savedUser = await this.userRepository.create(user);
+      delete savedUser.password;
+
+      return savedUser;
+    } catch (error) {
+      console.log(error);
+      if (error.code === 11000 && error.errmsg.includes('index: uniqueEmail')) {
+        throw new HttpErrors.Conflict('Email value is already taken');
+      } else {
+        throw error;
+      }
+    }
   }
 
   @get('/users/count', {
@@ -202,7 +223,29 @@ export class UserController {
     @param.path.number('id') id: number,
     @requestBody() user: User,
   ): Promise<void> {
-    await this.userRepository.replaceById(id, user);
+
+
+    // encrypt the password
+    user.password = await this.passwordHasher.hashPassword(user.password || '{}'); // user.password
+    try {
+      // create the new user
+      console.log(user);
+      await this.userRepository.replaceById(id, user);
+      
+
+      // return savedUser;
+    } catch (error) {
+      console.log(error);
+      if (error.code === 11000 && error.errmsg.includes('index: uniqueEmail')) {
+        throw new HttpErrors.Conflict('Email value is already taken');
+      } else {
+        throw error;
+      }
+    }
+
+
+
+    // await this.userRepository.replaceById(id, user);
   }
 
   @del('/users/{id}', {
