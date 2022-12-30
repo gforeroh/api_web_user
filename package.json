@@ -64,7 +64,7 @@
     "loopback-connector-mysql": "^5.4.1"
   },
   "devDependencies": {
-    "@loopback/build": "^2.0.3",
+    "@loopback/build": "^9.0.6",
     "@loopback/eslint-config": "^2.0.0",
     "@loopback/testlab": "^1.6.3",
     "@types/lodash": "^4.14.135",
